@@ -22,31 +22,6 @@ using namespace reactor;
 int main(int argc, const char * argv[]) {
     // insert code here...
     
-    /*
-    TcpAcceptor acc;
-    acc.bindAddr("127.0.0.1", 6558);
-    acc.listen();
-    Poller poll;
-    int eventcount=0;
-    poll.addFd(acc.getfd(), NULL);
-    poll_event event[20];
-    
-    for(;;){
-       poll.wait(event,20);
-       int conn=acc.accept();
-        if(conn>0){
-            eventcount+=1;
-            printf("%d \n",eventcount);
-            
-        }else{
-            printf("fail!");
-        }
-
-    }
-    
-    printf("test acceptor and poller");
-    */
-    
     //echo
     ServerLoop ser;
     ser.addAcceptor("127.0.0.1", 6558);
