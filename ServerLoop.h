@@ -48,8 +48,8 @@ namespace reactor {
         
     public:
         bool notifytask_;
-        int mainfd_[THREADSIZE+1];    //send message
-        int recvfd_[THREADSIZE+1];    //recv message
+        Notify tasknoti[THREADSIZE];
+        Notify sernoti;
         std::vector<address> acceptors_; //neednt
         EventLoopPtr EventLoops_[THREADSIZE];
         
@@ -65,9 +65,6 @@ namespace reactor {
         
         void taskPut(Task &q);
         void taskTake(int home);      //block
-        
-        static void wakeup(int fd);
-        static void wakedown(int fd);
         
         static void* threadfunc(void*);       //eventloop
         static void* auxiliaryfunc(void*);    //acceptor and notify

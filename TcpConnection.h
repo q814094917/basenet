@@ -36,13 +36,6 @@ namespace reactor{
             connected_=true;
         }
         
-        int getTcpFd(){
-            return fd_;
-        }
-        
-        void setTcpFd(int fd){
-            fd_=fd;
-        }
         
         bool isConnected(){
             return connected_;

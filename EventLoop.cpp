@@ -12,6 +12,7 @@
 #include "TcpConnection.h"
 #include "Encode.h"
 #include "Decode.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
@@ -22,13 +23,9 @@ EventLoop::EventLoop(ServerLoop* mainloop,int home,int size)
     ,home_(home)
 {
     mainfd_=0;
-    int fd[2];
-    if(pipe(fd)<0){
-        assert(0);
-    }
-    poller_->addFd(fd[0],NULL);
-    wakedownfd_=fd[0];
-    wakeupfd_=fd[1];
+    
+    poller_->addFd(notievent_.getRecvfd(),NULL);
+    
     
     
 }
@@ -43,7 +40,7 @@ void EventLoop::setMainFd(int mainfd){
 
 void EventLoop::loop(){
     assert(mainfd_);
-    notifymain('0');
+    notievent_.notifyFd(mainfd_);
     
     while(!quit){
         
@@ -52,9 +49,8 @@ void EventLoop::loop(){
         int sockfd;
         for(int i=0;i<count;i++){
             sockfd=events_[i].fd;
-            if(sockfd==wakedownfd_){
-               
-                wakedown();
+            if(sockfd==notievent_.getRecvfd()){
+                notievent_.disnotify();
             }else{
                 if(events_[i].flag&MPOLL_IN){
                     handleRead(sockfd);
@@ -72,7 +68,8 @@ void EventLoop::loop(){
         
         if(!taskqueue_.empty()){
             doTask();
-            notifymain('0');
+            //'0': taskqueue is NULL
+            notievent_.notifyFd(mainfd_);
             //when null notify  dont need mutex
             //just signal
         }
@@ -104,6 +101,7 @@ void EventLoop::doTask(){
             
             case RSEND:
             {
+                if(connectionMap_.find(nowtask.fd_)!=connectionMap_.end()){
                 //fix encode
                 uint16_t len=Encode16(nowtask.size_);
                 connectionMap_[nowtask.fd_]->outputBuffer_.append(&len,sizeof(len));
@@ -111,6 +109,9 @@ void EventLoop::doTask(){
                 //fix jemalloc
                 free(nowtask.message_);
                 handleWrite(nowtask.fd_);
+                }else{
+                    free(nowtask.message_);
+                }
             }
                 break;
             case RDEL:
@@ -137,14 +138,13 @@ void EventLoop::handleRead(int fd){
         //printf("EventLoop read ERROR!\n");
         handleClose(fd);
     }else{
-        //printf("read!\n");
+        
         for(;;){
             //fix task*
             
             
             size_t ret=Decode16(&connectionMap_[fd]->inputBuffer_);
             if(ret!=0){
-                printf("Decode success!\n");
                 Task task;
                 task.home_=home_;
                 task.fd_=fd;
@@ -152,7 +152,6 @@ void EventLoop::handleRead(int fd){
                 memcpy(task.message_, connectionMap_[fd]->inputBuffer_.getReadPeek(), ret);
                 task.size_=ret;
                 connectionMap_[fd]->inputBuffer_.retrieve(ret);
-                //printf("%s\n",(char*)task.message_);
                 messagequeue_.push(task);
                 
             }else{
@@ -192,59 +191,16 @@ void EventLoop::handleClose(int fd){
 void EventLoop::newconnection(int fd){
     poller_->addFd(fd,NULL);
     TcpConnection* newfd=new TcpConnection(fd,this->poller_);
-    newfd->setTcpFd(fd);
     connectionMap_.insert(std::pair<int,TcpConnection*>(fd,newfd));
 }
 
-
-// '0'  the task queue is null
-
-void EventLoop::notifymain(char opt){
-    char x=opt;
-    for(;;){
-        ssize_t count=write(mainfd_, &opt, sizeof opt);
-        if(count<0){
-            switch (errno) {
-                case EINTR:
-                    errno=0;
-                    continue ;
-            }
-            errno=0;
-            printf("EventLoop::wakeup error");
-            return ;
-        }
-        return ;
-    }
-}
-
-void EventLoop::wakeup(char opt){
-    char one=opt;
+void EventLoop::swapTask(std::queue<Task>& taskqueue){
     
-    for(;;){
-        ssize_t count=write(wakeupfd_, &one, sizeof one);
-        if(count<0){
-            switch (errno) {
-                case EINTR:
-                    errno=0;
-                    continue ;
-            }
-            errno=0;
-            printf("EventLoop::wakeup error");
-            return ;
-        }
-        return ;
-    }
+    std::swap(taskqueue_,taskqueue);
+    notievent_.notify();
 }
 
-//'0' is wakeup
 
-void EventLoop::wakedown(){
-    char one;
-    ssize_t count=read(wakedownfd_, &one, sizeof one);
-    if(count<0){
-        printf("EventLoop::wakedown error");
-        return;
-    }
-}
+
 
 

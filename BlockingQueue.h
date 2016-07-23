@@ -44,7 +44,6 @@ namespace reactor{
                 queue_.push(q.front());
                 q.pop();
             }
-            printf("%d",q.size());
             cond_.notify();
             
         }

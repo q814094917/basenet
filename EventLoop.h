@@ -17,6 +17,8 @@
 #include "Poller.h"
 #include "ThreadMutex.h"
 #include "Task.h"
+#include "Notify.h"
+
 
 #include "ServerLoop.h"
 
@@ -35,15 +37,12 @@ namespace reactor{
         
         bool quit;
         
-        int eventcount;
-        
         std::queue<Task> taskqueue_;   //If its null send null message to serverfd_;
                                         //In loop we evidance;
         std::queue<Task> messagequeue_; //If mainmessagequeue is null send message to thisfd_;
         int mainfd_;
         
-        int wakeupfd_;
-        int wakedownfd_;
+        Notify notievent_;
         
     public:
         EventLoop(ServerLoop* mainloop,int home,int size=4096);
@@ -55,19 +54,12 @@ namespace reactor{
         void handleWrite(int fd);
         void handleClose(int fd);
         
-        void wakeup(char opt);
-        void wakedown();
         
-        void notifymain(char opt);
         
         void doTask();
         void newconnection(int fd);
         
-        void swapTask(std::queue<Task>& taskqueue){
-            
-            std::swap(taskqueue_,taskqueue);
-            wakeup('0');
-        }
+        void swapTask(std::queue<Task>& taskqueue);
         
         
     

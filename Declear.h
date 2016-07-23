@@ -17,6 +17,7 @@ namespace reactor{
     class ThreadMutex;
     class ServerLoop;
     class Thread;
+    class Notify;
 }
 
 

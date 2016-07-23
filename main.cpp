@@ -22,14 +22,16 @@ using namespace reactor;
 int main(int argc, const char * argv[]) {
     // insert code here...
     
+    
     //echo
+    int index=0;
     ServerLoop ser;
     ser.addAcceptor("127.0.0.1", 6558);
     ser.start();
     while(true){
         Task message=ser.getMessage();
-        printf("%s",(char*)message.message_);
-        
+        index+=1;
+        printf("%s%d",(char*)message.message_,index);
         //avoid free
         Task sender;
         sender.fd_=message.fd_;
