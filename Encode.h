@@ -13,18 +13,28 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 namespace reactor {
-    static uint8_t Encode8(size_t x){
-        return (uint8_t)x;
-    }
     
-    static uint16_t Encode16(size_t x){
+    
+    static uint16_t Encodeu16(size_t x){
         uint16_t x_=(uint16_t)x;
         x_=htons(x_);
         return x_;
     }
     
-    static uint32_t Encode32(size_t x){
+    static int16_t Encode16(size_t x){
+        int16_t x_=(int16_t)x;
+        x_=htons(x_);
+        return x_;
+    }
+    
+    static uint32_t Encodeu32(size_t x){
         uint32_t x_=(uint32_t)x;
+        x_=htonl(x_);
+        return x_;
+    }
+    
+    static int32_t Encode32(size_t x){
+        int32_t x_=(int32_t)x;
         x_=htonl(x_);
         return x_;
     }

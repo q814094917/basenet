@@ -23,7 +23,6 @@ namespace reactor{
     class TcpConnection{
     private:
         int fd_;
-        bool connected_;
         std::shared_ptr<Poller> poller_; //you dont know
     public:
         Buffer inputBuffer_;
@@ -33,18 +32,16 @@ namespace reactor{
         :poller_(poller)
         ,fd_(fd)
         {
-            connected_=true;
+            
         }
         
-        
-        bool isConnected(){
-            return connected_;
+        int getFd(){
+            return fd_;
         }
         
-        void setConnected(bool conn){
-            connected_=conn;
+        void setFd(int fd){
+            fd_=fd;
         }
-        
         
         
         int send(){
@@ -116,6 +113,13 @@ namespace reactor{
             eventf flag=MPOLL_IN;
             poller_->modFd(fd_,flag,this);
             
+        }
+        
+        void resetTcp(){
+            //fix check buffersize
+            fd_=0;
+            inputBuffer_.resetBuffer();
+            outputBuffer_.resetBuffer();
         }
     };
 }

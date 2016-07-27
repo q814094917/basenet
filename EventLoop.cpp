@@ -21,6 +21,7 @@ EventLoop::EventLoop(ServerLoop* mainloop,int home,int size)
     :poller_(new Poller)
     ,ServerLoopBind_(mainloop)
     ,home_(home)
+    ,connpool_(8192,0,this->poller_)
 {
     mainfd_=0;
     
@@ -132,16 +133,16 @@ void EventLoop::doTask(){
 
 void EventLoop::handleRead(int fd){
     //fix check
+    
     if(connectionMap_.find(fd)!=connectionMap_.end()){
     int ret=connectionMap_[fd]->recv();
     if(ret<0){
-        //printf("EventLoop read ERROR!\n");
+        
         handleClose(fd);
     }else{
         
         for(;;){
             //fix task*
-            
             
             size_t ret=Decode16(&connectionMap_[fd]->inputBuffer_);
             if(ret!=0){
@@ -183,15 +184,21 @@ void EventLoop::handleClose(int fd){
     close(fd);
     
     
-    delete connectionMap_[fd];
+    connpool_.push(connectionMap_[fd]);
     connectionMap_.erase(fd);
     
 }
 
 void EventLoop::newconnection(int fd){
     poller_->addFd(fd,NULL);
-    TcpConnection* newfd=new TcpConnection(fd,this->poller_);
-    connectionMap_.insert(std::pair<int,TcpConnection*>(fd,newfd));
+    TcpConnection* newfd=connpool_.pop();
+    newfd->setFd(fd);
+    if(newfd==NULL){
+        close(fd);
+    }else{
+        connectionMap_.insert(std::pair<int,TcpConnection*>(fd,newfd));
+    }
+    
 }
 
 void EventLoop::swapTask(std::queue<Task>& taskqueue){

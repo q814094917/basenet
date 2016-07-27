@@ -31,7 +31,7 @@ namespace reactor{
             
         }
         void makeSpace(size_t len){
-            if(writeableSize()+readableSize()<len){
+            if(writeableSize()+readableindex_<len){
                 buffer_.resize(writeableindex_+len);
             }else{
                 std::copy(begin()+readableindex_,
@@ -89,8 +89,13 @@ namespace reactor{
             writeableindex_=0;
         }
         
+        void clear(){
+            std::vector<char> fix;
+            buffer_.swap(fix);
+        }
+        
         void append(const char* data,size_t len){
-            if(writeableindex_<len){
+            if(writeableSize()<len){
                 makeSpace(len);
             }
             std::copy(data,data+len,getWritePeek());

@@ -18,6 +18,7 @@
 #include "ThreadMutex.h"
 #include "Task.h"
 #include "Notify.h"
+#include "ObjectPool.h"
 
 
 #include "ServerLoop.h"
@@ -34,6 +35,8 @@ namespace reactor{
         poll_event events_[64];  //获取epoll的就绪事件
         
         ConnectionMap connectionMap_;
+        ObjectPool<TcpConnection> connpool_;
+        
         
         bool quit;
         

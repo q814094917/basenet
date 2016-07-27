@@ -139,11 +139,11 @@ void* ServerLoop::auxiliaryfunc(void* a){
                 acceptask.home_=dispatchindex%THREADSIZE;
                 dispatchindex=(dispatchindex+1)%THREADSIZE;
                 thisloop->taskPut(acceptask);
-                printf("taskqueue%d size=%d",acceptask.home_,thisloop->childtaskqueue_[acceptask.home_].size());
+                
                 //printf("accept%d\n",acceptask.home_);
                 }else{
+                    printf("accept Error!\n");
                     
-                    printf("%d====%d",accs[0].getfd(),events[i].fd);
                 }
                 
             }else{
